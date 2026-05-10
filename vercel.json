@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/proxy", "destination": "/api/proxy" },
+    { "source": "/v1/chat/completions", "destination": "/api/proxy" }
+  ]
+}

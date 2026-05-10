@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AI健康管家">
+<meta name="theme-color" content="#4ECDC4">
+<title>AI健康管家</title>
+<style>
+/* ========== Reset & Base ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#4ECDC4;--green-dark:#3dbdb5;--red:#FF6B6B;--yellow:#FFD93D;
+  --bg:#f0f4f3;--card:#fff;--text:#2c3e50;--text-light:#7f8c8d;
+  --radius:16px;--shadow:0 2px 12px rgba(0,0,0,0.06);
+  --font-stack:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+body{font-family:var(--font-stack);background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;position:relative;overflow-x:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+
+/* ========== Header ========== */
+.header{background:linear-gradient(135deg,var(--green),#44b3ab);color:#fff;padding:16px 20px;text-align:center;font-size:18px;font-weight:700;letter-spacing:0.5px;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:11}
+.header .sub{font-size:11px;font-weight:400;opacity:0.85;margin-top:2px}
+
+/* ========== Tab Bar ========== */
+.tab-bar{display:flex;background:var(--card);border-bottom:1px solid #e8ecef;position:fixed;top:72px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:11}
+.tab-btn{flex:1;padding:12px 0;text-align:center;font-size:14px;color:var(--text-light);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);font-weight:600}
+
+/* ========== Tab Content ========== */
+.tab-content{display:none;padding:132px 16px 16px 16px;animation:fadeIn 0.25s}
+.tab-content.active{display:block}
+#tab-chat.active{display:flex;flex-direction:column;height:100vh;padding:132px 16px 0 16px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ========== Cards ========== */
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
+
+/* ========== Form ========== */
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:13px;color:var(--text-light);margin-bottom:4px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid #dde1e4;border-radius:10px;font-size:15px;background:#fafbfc;outline:none;transition:border 0.2s;-webkit-appearance:none;appearance:none;box-sizing:border-box}
+.form-group input:focus,.form-group select:focus{border-color:var(--green)}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:active{background:var(--green-dark);transform:scale(0.98)}
+
+/* ========== Nutrition Goal Cards ========== */
+.goal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.goal-item{text-align:center;padding:12px 8px;background:#f8faf9;border-radius:12px}
+.goal-item .ring{width:60px;height:60px;margin:0 auto 6px;position:relative}
+.goal-item .label{font-size:11px;color:var(--text-light)}
+.goal-item .value{font-size:18px;font-weight:700}
+.goal-item .color1{color:var(--red)}
+.goal-item .color2{color:var(--green)}
+.goal-item .color3{color:var(--yellow)}
+.goal-item .color4{color:#4CAF50}
+
+/* ========== Chat ========== */
+.chat-area{display:flex;flex-direction:column;flex:1;min-height:0}
+.chat-messages{flex:1;overflow-y:auto;padding:8px 0}
+.msg{max-width:85%;margin-bottom:10px;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;animation:fadeIn 0.2s;word-break:break-word}
+.msg.user{margin-left:auto;background:var(--green);color:#fff;border-bottom-right-radius:4px}
+.msg.assistant{margin-right:auto;background:var(--card);border:1px solid #e8ecef;border-bottom-left-radius:4px}
+.msg .time{font-size:10px;opacity:0.6;margin-top:4px}
+.chat-input-area{display:flex;gap:8px;padding:10px 0;background:var(--bg);position:sticky;bottom:0}
+.chat-input-area input{flex:1;padding:10px 14px;border:1px solid #dde1e4;border-radius:22px;font-size:14px;outline:none;background:var(--card)}
+.chat-input-area input:focus{border-color:var(--green)}
+.chat-input-area button{width:44px;height:44px;border:none;border-radius:50%;background:var(--green);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0}
+.chat-input-area button:active{background:var(--green-dark);transform:scale(0.95)}
+.chat-input-area button:disabled{background:#ccc}
+.quick-asks{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.quick-asks span{font-size:11px;padding:6px 10px;background:#e8f8f6;color:var(--green-dark);border-radius:14px;cursor:pointer;white-space:nowrap}
+.quick-asks span:active{background:#d0f0ec}
+.empty-chat{text-align:center;color:var(--text-light);padding:40px 20px;font-size:14px;line-height:1.8}
+
+/* ========== Diet ========== */
+.food-search{margin-bottom:12px}
+.food-list .food-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:14px}
+.food-item:active{background:#f5faf9}
+.food-item .heat{font-size:12px;color:var(--text-light)}
+.today-log .log-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.log-item .del{color:var(--red);cursor:pointer;font-size:16px;padding:0 4px}
+.nutrition-summary{margin-top:12px}
+.progress-row{display:flex;align-items:center;margin-bottom:8px;font-size:13px}
+.progress-row .bar-bg{flex:1;height:8px;background:#e8ecef;border-radius:4px;margin:0 8px;overflow:hidden}
+.progress-row .bar-fill{height:100%;border-radius:4px;transition:all 0.5s ease}
+
+/* ========== AI Report ========== */
+.report-box{background:#f8faf9;border-radius:var(--radius);padding:14px;margin-top:10px;font-size:13px;line-height:1.7;white-space:pre-wrap}
+
+/* ========== Toast ========== */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#2c3e50;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:99;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ========== Loading ========== */
+.loading{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text-light);animation:bounce 1.2s infinite;margin:0 2px}
+.loading:nth-child(2){animation-delay:0.2s}
+.loading:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+
+/* ========== Offline Banner ========== */
+.offline-banner{display:none;text-align:center;padding:6px;background:#FFF3CD;color:#856404;font-size:12px;position:fixed;top:72px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:12}
+.offline-banner.show{display:block}
+
+/* ========== Scrollbar ========== */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:#d0d5d8;border-radius:2px}
+
+/* ========== 7-Day Trend Chart ========== */
+.trend-chart{display:flex;align-items:flex-end;gap:4px;height:120px;padding:8px 0}
+.trend-bar{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+.trend-bar-fill{border-radius:4px 4px 0 0;width:100%;min-height:4px;transition:height 0.6s ease}
+.trend-bar-label{font-size:9px;color:var(--text-light);margin-top:4px}
+.trend-bar-value{font-size:9px;color:var(--text);font-weight:600;position:absolute;top:-18px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  AI健康管家
+  <div class="sub">你的私人AI营养师 · Powered by 蓝心大模型</div>
+</div>
+
+<div class="offline-banner" id="offlineBanner">⚠️ 当前离线，AI对话不可用，饮食记录功能正常</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="chat">💬 AI助手</button>
+  <button class="tab-btn" data-tab="diet">🥗 饮食记录</button>
+  <button class="tab-btn" data-tab="profile">👤 个人画像</button>
+</div>
+
+<!-- ===== AI助手 Tab ===== -->
+<div class="tab-content active" id="tab-chat">
+  <div class="chat-area">
+    <!-- 今日仪表盘 -->
+    <div class="card" id="dashboard" style="display:none;flex-shrink:0;margin:0 0 8px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="document.getElementById('dbContent').style.display=document.getElementById('dbContent').style.display==='none'?'block':'none'">
+        <div class="card-title" style="margin:0">📊 今日概览 <span id="dbDate" style="font-size:11px;color:var(--text-light);font-weight:400"></span></div>
+        <span style="font-size:12px;color:var(--text-light)">展开/收起</span>
+      </div>
+      <div id="dbContent">
+        <div class="nutrition-summary" id="dbNutrition" style="margin-top:8px"></div>
+        <div id="dbFoodList" style="font-size:12px;color:var(--text-light);margin-top:6px"></div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="empty-chat" id="emptyChat">
+        👋 你好！我是你的AI健康管家<br>
+        告诉我你的身体数据，我就能给你<br>
+        <strong>个性化的健康饮食建议</strong><br><br>
+        试试问我：<br>"我今天应该怎么吃？"
+      </div>
+    </div>
+    <div class="quick-asks" id="quickAsks">
+      <span onclick="quickAsk('我今天应该怎么吃？')">🍽 今天怎么吃？</span>
+      <span onclick="quickAsk('帮我分析一下我的饮食情况')">📊 分析饮食</span>
+      <span onclick="quickAsk('给我一份健康的一日三餐方案')">📋 一日三餐方案</span>
+      <span onclick="generateWeeklyReport()">📈 本周报告</span>
+    </div>
+    <div class="chat-input-area">
+      <button id="micBtn" onclick="startVoiceInput()" style="width:44px;height:44px;border:none;border-radius:50%;background:#f0f0f0;font-size:18px;cursor:pointer;flex-shrink:0" title="语音输入">🎤</button>
+      <input type="text" id="chatInput" placeholder="输入或说出你的问题..." onkeydown="if(event.key==='Enter')sendMessage()">
+      <button id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 饮食记录 Tab ===== -->
+<div class="tab-content" id="tab-diet">
+  <div class="card">
+    <div class="card-title">🔍 搜索食物</div>
+    <input type="text" class="food-search" id="foodSearch" placeholder="输入食物名称..." oninput="searchFood()" style="width:100%;padding:10px 12px;border:1px solid #dde1e4;border-radius:10px;font-size:14px;outline:none">
+    <div class="quick-asks" id="foodCats" style="margin-top:6px">
+      <span onclick="filterCategory('all')" style="background:#e8f8f6;font-weight:600">全部</span>
+      <span onclick="filterCategory('早餐')">🥣 早餐</span>
+      <span onclick="filterCategory('主食')">🍚 主食</span>
+      <span onclick="filterCategory('肉蛋')">🥩 肉蛋</span>
+      <span onclick="filterCategory('蔬菜')">🥬 蔬菜</span>
+      <span onclick="filterCategory('水果')">🍎 水果</span>
+      <span onclick="filterCategory('饮品')">🥤 饮品</span>
+      <span onclick="filterCategory('快餐')">🍟 快餐</span>
+      <span onclick="filterCategory('菜品')">🍲 菜品</span>
+    </div>
+    <div class="food-list" id="foodResults"></div>
+    <div id="foodCatLabel" style="font-size:11px;color:var(--green);padding:4px 0;display:none">当前分类: <span id="catName"></span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📝 <span onclick="changeDate(-1)" style="cursor:pointer;font-size:16px;padding:0 4px">◀</span> 饮食记录 <span id="todayDate" style="font-size:12px;color:var(--text-light);font-weight:400"></span> <span onclick="changeDate(1)" style="cursor:pointer;font-size:16px;padding:0 4px">▶</span> <span onclick="changeDate(0)" style="font-size:11px;color:var(--green);cursor:pointer;text-decoration:underline">回今天</span></div>
+    <div class="today-log" id="todayLog"><div style="color:var(--text-light);font-size:13px;text-align:center;padding:10px">暂无记录，搜索食物并点击添加</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 今日营养摄入</div>
+    <div class="nutrition-summary" id="nutritionSummary"></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">📈 7天热量趋势</div>
+    <div class="trend-chart" id="trendChart"></div>
+    <div style="font-size:10px;color:var(--text-light);text-align:center">━━ 最近7天 ━━</div>
+  </div>
+<div class="card" style="margin-top:8px"><button class="btn btn-primary" onclick="generateDailyReport()">🤖 AI 生成今日饮食总结</button><div class="report-box" id="dailyReport" style="display:none"></div></div>
+</div>
+
+<!-- ===== 个人画像 Tab ===== -->
+<div class="tab-content" id="tab-profile">
+  <div class="card">
+    <div class="card-title">📋 个人健康画像</div>
+    <div class="form-row">
+      <div class="form-group"><label>性别</label><select id="pfGender"><option value="male">男</option><option value="female">女</option></select></div>
+      <div class="form-group"><label>年龄</label><input type="number" id="pfAge" placeholder="岁" min="10" max="120"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>身高 (cm)</label><input type="number" id="pfHeight" placeholder="cm" min="100" max="250"></div>
+      <div class="form-group"><label>体重 (kg)</label><input type="number" id="pfWeight" placeholder="kg" min="30" max="200"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>职业</label><input type="text" id="pfOccupation" placeholder="如：程序员、学生"></div>
+      <div class="form-group"><label>目标体重 (kg)</label><input type="number" id="pfTargetWeight" placeholder="kg" min="30" max="200"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveProfile()">💾 保存画像</button>
+  </div>
+  <div class="card" id="nutritionGoalsCard" style="display:none">
+    <div class="card-title">🎯 每日营养目标（自动计算）</div>
+    <div class="goal-grid" id="nutritionGoals"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚙️ API 配置</div>
+    <div class="form-group"><label>API Base URL</label><input type="text" id="apiBaseUrl" placeholder="https://healthy-life-bao.vercel.app"></div>
+    <div class="form-group"><label>API Key（已预填）</label><input type="text" id="apiKey"></div>
+    <div class="form-group"><label>Model</label><select id="apiModel"></select></div>
+    <button class="btn btn-primary" onclick="saveApiConfig()">💾 保存API配置</button>
+    <div style="font-size:11px;color:var(--text-light);margin:8px 0;line-height:1.6">
+      💡 Base URL <b>留空</b> 即可使用已部署的 API 代理<br>
+      💡 如需直接调用，填 <code>https://api-ai.vivo.com.cn</code>
+    </div>
+    <button class="btn" style="background:#f0f0f0;margin-top:8px" onclick="testApiConnection()">🔌 测试API连接</button>
+    <div id="apiTestResult" style="font-size:12px;margin-top:6px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🗂 数据管理</div>
+    <button class="btn" style="background:#e8f8f6;color:var(--green-dark);margin-bottom:8px" onclick="loadDemoData()">📥 加载演示数据（饮食记录）</button>
+    <button class="btn" style="background:#FFF3CD;color:#856404;margin-bottom:8px" onclick="exportData()">📤 导出所有数据</button>
+    <button class="btn" style="background:#FFE0E0;color:#FF6B6B" onclick="clearAllData()">🗑 清除所有数据</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== GLOBAL STATE ====================
+const DEFAULT_BASE_URL = '';  // 部署后填入 Vercel 地址
+const DEFAULT_API_KEY = 'sk-xuanji-2026631636-d3dsS3V6dEt6bmpWQ1JzUA==';
+const DEFAULT_MODEL = 'Doubao-Seed-2.0-pro';
+const AVAILABLE_MODELS = ['qwen3.5-plus', 'Volc-DeepSeek-V3.2', 'Doubao-Seed-2.0-pro', 'Doubao-Seed-2.0-mini', 'Doubao-Seed-2.0-lite'];
+
+function getState(key, fallback = null) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function setState(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      showToast('⚠️ 存储空间不足，正在清理旧数据...');
+      // Remove old chat history first (most expendable)
+      localStorage.removeItem('chatHistory');
+      try { localStorage.setItem(key, JSON.stringify(val)); showToast('✅ 已自动清理'); }
+      catch { showToast('❌ 存储已满，请手动清除数据'); }
+    }
+  }
+}
+
+// ==================== UTILITY ====================
+function renderProgressBar(label, val, goal, opts = {}) {
+  const pct = goal > 0 ? Math.min(100, Math.round(val / goal * 100)) : 0;
+  const color = pct > 100 ? 'var(--red)' : pct > 80 ? 'var(--yellow)' : 'var(--green)';
+  const labelW = opts.labelW || 50;
+  const fontSize = opts.fontSize || 11;
+  const valW = opts.valW || 60;
+  return `<div class="progress-row">
+    <span style="width:${labelW}px;font-size:${fontSize}px">${label}</span>
+    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span style="width:${valW}px;text-align:right;font-size:${fontSize}px">${Math.round(val)}/${goal}</span>
+  </div>`;
+}
+
+// ==================== TOAST ====================
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ==================== TAB SWITCHING ====================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'chat') { updateDashboard(); }
+    if (btn.dataset.tab === 'diet') { renderDietTab(); }
+    if (btn.dataset.tab === 'profile') { loadProfileForm(); }
+  });
+});
+
+// ==================== API CONFIG ====================
+function getApiConfig() {
+  return {
+    baseUrl: getState('apiBaseUrl', DEFAULT_BASE_URL),
+    apiKey: getState('apiKey', DEFAULT_API_KEY),
+    model: getState('apiModel', DEFAULT_MODEL)
+  };
+}
+
+function loadApiConfigForm() {
+  const cfg = getApiConfig();
+  document.getElementById('apiBaseUrl').value = cfg.baseUrl;
+  document.getElementById('apiKey').value = cfg.apiKey;
+  const sel = document.getElementById('apiModel');
+  sel.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}" ${m === cfg.model ? 'selected' : ''}>${m}</option>`).join('');
+}
+
+function saveApiConfig() {
+  setState('apiBaseUrl', document.getElementById('apiBaseUrl').value.trim());
+  setState('apiKey', document.getElementById('apiKey').value.trim());
+  setState('apiModel', document.getElementById('apiModel').value.trim());
+  showToast('API配置已保存 ✅');
+}
+
+async function testApiConnection() {
+  // Read directly from form values (not from saved localStorage)
+  const baseUrl = document.getElementById('apiBaseUrl').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('apiModel').value;
+  const resultDiv = document.getElementById('apiTestResult');
+  resultDiv.textContent = '测试中...';
+
+  try {
+    const testBody = JSON.stringify({
+      model: model,
+      messages: [{ role: 'user', content: '你好，请回复"连接成功"' }],
+      max_tokens: 20
+    });
+    const apiUrl = (baseUrl || DEFAULT_BASE_URL) + '/v1/chat/completions';
+    const resp = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: testBody
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      resultDiv.textContent = '✅ 连接成功！模型: ' + model + ' | 回复: ' + data.choices[0].message.content;
+      resultDiv.style.color = '#4ECDC4';
+    } else {
+      const err = await resp.text().catch(() => '');
+      resultDiv.textContent = '❌ HTTP ' + resp.status + ' ' + err.slice(0, 100);
+      resultDiv.style.color = '#FF6B6B';
+    }
+  } catch (e) {
+    resultDiv.textContent = '❌ 连接失败: ' + e.message + '（请确认Base URL正确且server.py已启动）';
+    resultDiv.style.color = '#FF6B6B';
+  }
+}
+
+// ==================== USER PROFILE ====================
+function getProfile() {
+  return getState('userProfile', {
+    gender: 'male', age: 22, height: 180, weight: 75,
+    occupation: '', targetWeight: 70
+  });
+}
+
+function loadProfileForm() {
+  loadApiConfigForm();
+  const p = getProfile();
+  document.getElementById('pfGender').value = p.gender;
+  document.getElementById('pfAge').value = p.age || '';
+  document.getElementById('pfHeight').value = p.height || '';
+  document.getElementById('pfWeight').value = p.weight || '';
+  document.getElementById('pfOccupation').value = p.occupation || '';
+  document.getElementById('pfTargetWeight').value = p.targetWeight || '';
+  renderNutritionGoals();
+}
+
+function saveProfile() {
+  const p = {
+    gender: document.getElementById('pfGender').value,
+    age: parseInt(document.getElementById('pfAge').value) || 22,
+    height: parseInt(document.getElementById('pfHeight').value) || 180,
+    weight: parseInt(document.getElementById('pfWeight').value) || 75,
+    occupation: document.getElementById('pfOccupation').value.trim(),
+    targetWeight: parseInt(document.getElementById('pfTargetWeight').value) || 70
+  };
+  setState('userProfile', p);
+  renderNutritionGoals();
+  updateDashboard();
+  showToast('画像已保存 ✅');
+}
+
+function calculateNutritionGoals() {
+  const p = getProfile();
+  // BMR: Mifflin-St Jeor
+  let bmr;
+  if (p.gender === 'male') {
+    bmr = 10 * p.weight + 6.25 * p.height - 5 * p.age + 5;
+  } else {
+    bmr = 10 * p.weight + 6.25 * p.height - 5 * p.age - 161;
+  }
+  const tdee = Math.round(bmr * 1.55); // 轻度活动
+  // Adjust based on target
+  const diff = p.weight - p.targetWeight;
+  let targetCal = tdee;
+  if (diff > 5) targetCal = Math.round(tdee * 0.85); // 减肥
+  else if (diff < -3) targetCal = Math.round(tdee * 1.1); // 增重
+
+  return {
+    heat: Math.max(1200, targetCal),
+    protein: Math.round(targetCal * 0.20 / 4), // 20% protein, 4kcal/g
+    fat: Math.round(targetCal * 0.25 / 9),     // 25% fat, 9kcal/g
+    carbohydrate: Math.round(targetCal * 0.55 / 4) // 55% carbs, 4kcal/g
+  };
+}
+
+function renderNutritionGoals() {
+  const goals = calculateNutritionGoals();
+  setState('nutritionGoals', goals);
+  document.getElementById('nutritionGoalsCard').style.display = 'block';
+  document.getElementById('nutritionGoals').innerHTML = `
+    <div class="goal-item"><div class="value color1">${goals.heat}</div><div class="label">热量 (千卡/天)</div></div>
+    <div class="goal-item"><div class="value color2">${goals.protein}g</div><div class="label">蛋白质</div></div>
+    <div class="goal-item"><div class="value color3">${goals.fat}g</div><div class="label">脂肪</div></div>
+    <div class="goal-item"><div class="value color4">${goals.carbohydrate}g</div><div class="label">碳水化合物</div></div>
+  `;
+}
+
+// ==================== SYSTEM PROMPT ====================
+function buildSystemPrompt() {
+  const p = getProfile();
+  const goals = calculateNutritionGoals();
+  let prompt = '你是一位专业的AI健康顾问，名字叫"AI健康管家"。正在与以下背景的用户交谈：\n\n';
+  prompt += '个人信息：\n';
+  prompt += '- 性别：' + (p.gender === 'male' ? '男' : '女') + '\n';
+  if (p.age) prompt += '- 年龄：' + p.age + '岁\n';
+  if (p.occupation) prompt += '- 职业：' + p.occupation + '\n';
+  prompt += '\n健康数据：\n';
+  prompt += '- 身高：' + p.height + 'cm\n';
+  prompt += '- 当前体重：' + p.weight + 'kg\n';
+  prompt += '- 目标体重：' + p.targetWeight + 'kg\n';
+  prompt += '\n每日营养目标（已自动计算）：\n';
+  prompt += '- 热量：' + goals.heat + '千卡\n';
+  prompt += '- 蛋白质：' + goals.protein + 'g\n';
+  prompt += '- 脂肪：' + goals.fat + 'g\n';
+  prompt += '- 碳水化合物：' + goals.carbohydrate + 'g\n';
+  prompt += '\n回答指南：\n';
+  prompt += '1. 根据用户的职业特点提供合适的健康建议\n';
+  prompt += '2. 考虑用户的年龄和身体状况调整饮食和运动建议\n';
+  prompt += '3. 提供具体、可执行的饮食方案\n';
+  prompt += '4. 使用友善、专业的语气，多用emoji增加亲和力\n';
+  prompt += '5. 回答简洁，每条控制在200字以内（除非用户要求详细方案）\n';
+  prompt += '6. 如果用户提供了饮食数据，优先基于数据给出分析\n';
+  return prompt;
+}
+
+// ==================== BLUE LM API ====================
+async function callBlueLM(userMessages) {
+  const cfg = getApiConfig();
+  if (cfg.baseUrl === undefined || cfg.baseUrl === null) throw new Error('请先在个人画像页配置API');
+
+  const messages = [
+    { role: 'system', content: buildSystemPrompt() },
+    ...userMessages
+  ];
+
+  const apiUrl = (cfg.baseUrl || DEFAULT_BASE_URL) + '/v1/chat/completions';
+  const resp = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + cfg.apiKey
+    },
+    body: JSON.stringify({
+      model: cfg.model,
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 2048
+    })
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    if (resp.status === 401) throw new Error('API Key无效，请检查配置');
+    if (resp.status === 429) throw new Error('请求太频繁，请稍后重试');
+    throw new Error('API请求失败 (HTTP ' + resp.status + '): ' + errText.slice(0, 100));
+  }
+
+  const data = await resp.json();
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('API返回格式异常');
+  }
+  return data.choices[0].message.content;
+}
+
+// ==================== CHAT ====================
+let isSending = false;
+function getChatHistory() { return getState('chatHistory', []); }
+
+function renderChatMessages() {
+  const container = document.getElementById('chatMessages');
+  const emptyDiv = document.getElementById('emptyChat');
+  const history = getChatHistory();
+
+  if (history.length === 0) {
+    emptyDiv.style.display = 'block';
+    container.querySelectorAll('.msg').forEach(m => m.remove());
+    return;
+  }
+  emptyDiv.style.display = 'none';
+
+  // Diff render: only add new messages
+  const existing = container.querySelectorAll('.msg');
+  if (existing.length < history.length) {
+    for (let i = existing.length; i < history.length; i++) {
+      const msg = history[i];
+      const div = document.createElement('div');
+      div.className = 'msg ' + msg.role;
+      div.innerHTML = msg.content.replace(/\n/g, '<br>') +
+        '<div class="time">' + new Date(msg.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) + '</div>';
+      container.appendChild(div);
+    }
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+function addChatMessage(role, content) {
+  const history = getChatHistory();
+  history.push({ role, content, timestamp: Date.now() });
+  // Keep last 200 msgs
+  if (history.length > 200) history.splice(0, history.length - 200);
+  setState('chatHistory', history);
+  renderChatMessages();
+}
+
+function quickAsk(question) {
+  document.getElementById('chatInput').value = question;
+  sendMessage();
+  // Switch to chat tab
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('[data-tab="chat"]').classList.add('active');
+  document.getElementById('tab-chat').classList.add('active');
+}
+
+async function sendMessage() {
+  if (isSending) return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  isSending = true;
+
+  const cfg = getApiConfig();
+
+  input.value = '';
+  addChatMessage('user', text);
+  document.getElementById('sendBtn').disabled = true;
+
+  // Show loading msg
+  const container = document.getElementById('chatMessages');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'msg assistant';
+  const chatStartTime = Date.now();
+  loadingDiv.innerHTML = '思考中 <span style="font-size:11px;opacity:0.6" id="chatTimer">0s</span><br><span class="loading"></span><span class="loading"></span><span class="loading"></span>';
+  loadingDiv.id = 'loadingMsg';
+  container.appendChild(loadingDiv);
+  container.scrollTop = container.scrollHeight;
+  document.getElementById('emptyChat').style.display = 'none';
+  const chatTimer = setInterval(() => {
+    const el = document.getElementById('chatTimer');
+    if (el) el.textContent = Math.floor((Date.now() - chatStartTime) / 1000) + 's';
+  }, 1000);
+
+  try {
+    const history = getChatHistory();
+    // Get last 20 messages for context (exclude current loading state)
+    const contextMsgs = history.slice(-20).map(m => ({ role: m.role, content: m.content }));
+
+    const reply = await safeCallAI(contextMsgs, '⚠️ 当前无法连接AI服务\n\n💡 ' + getRandomTip());
+    clearInterval(chatTimer);
+    document.getElementById('loadingMsg')?.remove();
+    addChatMessage('assistant', reply);
+  } catch (err) {
+    clearInterval(chatTimer);
+    document.getElementById('loadingMsg')?.remove();
+    addChatMessage('assistant', '⚠️ 发生未知错误: ' + err.message);
+  } finally {
+    isSending = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+// ==================== DATE NAVIGATION ====================
+let viewingDateOffset = 0;
+function changeDate(delta) {
+  viewingDateOffset += delta;
+  if (delta === 0) viewingDateOffset = 0;
+  renderDietTab();
+}
+function getViewingDate() {
+  const d = new Date(); d.setDate(d.getDate() + viewingDateOffset);
+  return d.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+}
+function getViewingDateLabel() {
+  if (viewingDateOffset === 0) return '今天';
+  if (viewingDateOffset === -1) return '昨天';
+  if (viewingDateOffset === 1) return '明天';
+  const d = new Date(); d.setDate(d.getDate() + viewingDateOffset);
+  return d.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+}
+
+// ==================== FOOD DATABASE ====================
+const FOOD_DB = [
+  { name:'米饭(100g)', heat:116, protein:2.6, fat:0.3, carbohydrate:25.9 },
+  { name:'馒头(100g)', heat:223, protein:7.0, fat:1.1, carbohydrate:44.2 },
+  { name:'面条(煮)(100g)', heat:110, protein:4.0, fat:0.5, carbohydrate:22.0 },
+  { name:'小米粥(100g)', heat:46, protein:1.4, fat:0.7, carbohydrate:8.4 },
+  { name:'全麦面包(100g)', heat:246, protein:10.0, fat:3.0, carbohydrate:43.0 },
+  { name:'鸡蛋(1个约50g)', heat:72, protein:6.5, fat:4.9, carbohydrate:1.3 },
+  { name:'鸡胸肉(100g)', heat:133, protein:31.0, fat:1.2, carbohydrate:0 },
+  { name:'猪瘦肉(100g)', heat:143, protein:20.3, fat:6.2, carbohydrate:1.5 },
+  { name:'牛肉(100g)', heat:125, protein:20.0, fat:4.2, carbohydrate:0.2 },
+  { name:'三文鱼(100g)', heat:139, protein:17.2, fat:7.8, carbohydrate:0 },
+  { name:'牛奶(250ml)', heat:135, protein:7.5, fat:8.0, carbohydrate:10.0 },
+  { name:'酸奶(200ml)', heat:144, protein:5.0, fat:5.4, carbohydrate:18.6 },
+  { name:'豆浆(300ml)', heat:48, protein:5.4, fat:1.8, carbohydrate:3.3 },
+  { name:'苹果(1个约200g)', heat:104, protein:0.4, fat:0.4, carbohydrate:27.6 },
+  { name:'香蕉(1根约120g)', heat:110, protein:1.7, fat:0.3, carbohydrate:26.4 },
+  { name:'橙子(1个约200g)', heat:94, protein:1.6, fat:0.4, carbohydrate:21.6 },
+  { name:'番茄(1个约150g)', heat:27, protein:1.3, fat:0.3, carbohydrate:5.3 },
+  { name:'黄瓜(1根约200g)', heat:30, protein:1.6, fat:0.4, carbohydrate:5.0 },
+  { name:'西兰花(100g)', heat:34, protein:2.8, fat:0.4, carbohydrate:6.6 },
+  { name:'白菜(100g)', heat:13, protein:1.5, fat:0.1, carbohydrate:2.2 },
+  { name:'胡萝卜(1根约150g)', heat:55, protein:1.5, fat:0.3, carbohydrate:12.0 },
+  { name:'土豆(100g)', heat:76, protein:2.0, fat:0.2, carbohydrate:17.2 },
+  { name:'豆腐(100g)', heat:76, protein:8.1, fat:3.7, carbohydrate:3.8 },
+  { name:'宫保鸡丁(份约300g)', heat:510, protein:36, fat:30, carbohydrate:18 },
+  { name:'麻婆豆腐(份约250g)', heat:350, protein:20, fat:25, carbohydrate:10 },
+  { name:'鱼香肉丝(份约250g)', heat:380, protein:22, fat:28, carbohydrate:12 },
+  { name:'清炒时蔬(份约200g)', heat:80, protein:4, fat:4, carbohydrate:10 },
+  { name:'红烧肉(份约200g)', heat:480, protein:15, fat:42, carbohydrate:8 },
+  { name:'炸鸡腿(1个约150g)', heat:390, protein:25, fat:28, carbohydrate:12 },
+  { name:'火锅(一顿估约800g)', heat:1200, protein:70, fat:80, carbohydrate:50 },
+  // 早餐类
+  { name:'包子(1个约80g)', heat:180, protein:7, fat:5, carbohydrate:26 },
+  { name:'饺子(10个约200g)', heat:420, protein:18, fat:16, carbohydrate:52 },
+  { name:'油条(1根约50g)', heat:230, protein:3, fat:14, carbohydrate:22 },
+  { name:'燕麦片(50g)', heat:189, protein:6.7, fat:3.4, carbohydrate:33 },
+  { name:'煎饼(1个约150g)', heat:380, protein:10, fat:8, carbohydrate:68 },
+  // 更多菜品
+  { name:'番茄炒蛋(份约200g)', heat:220, protein:12, fat:14, carbohydrate:10 },
+  { name:'蛋炒饭(份约300g)', heat:450, protein:14, fat:16, carbohydrate:62 },
+  { name:'清蒸鱼(份约200g)', heat:180, protein:32, fat:5, carbohydrate:2 },
+  { name:'糖醋排骨(份约200g)', heat:460, protein:22, fat:30, carbohydrate:22 },
+  { name:'水煮肉片(份约250g)', heat:420, protein:28, fat:30, carbohydrate:10 },
+  { name:'蒜蓉西兰花(份约150g)', heat:65, protein:3.5, fat:3, carbohydrate:6 },
+  // 零食饮品类
+  { name:'薯片(1包约75g)', heat:400, protein:3, fat:26, carbohydrate:38 },
+  { name:'开心果(30g)', heat:170, protein:6, fat:14, carbohydrate:5 },
+  { name:'黑巧克力(30g)', heat:160, protein:2, fat:11, carbohydrate:14 },
+  { name:'可乐(330ml)', heat:140, protein:0, fat:0, carbohydrate:35 },
+  { name:'奶茶(中杯约500ml)', heat:320, protein:4, fat:8, carbohydrate:58 },
+  { name:'橙汁(300ml)', heat:135, protein:1.5, fat:0, carbohydrate:31 },
+  // 更多水果
+  { name:'西瓜(1片约300g)', heat:90, protein:1.8, fat:0.3, carbohydrate:20 },
+  { name:'葡萄(100g)', heat:69, protein:0.7, fat:0.2, carbohydrate:18 },
+  { name:'草莓(100g)', heat:32, protein:0.7, fat:0.3, carbohydrate:7.7 },
+  // 快餐类
+  { name:'汉堡(1个约200g)', heat:500, protein:25, fat:25, carbohydrate:45 },
+  { name:'方便面(1包约100g)', heat:470, protein:10, fat:21, carbohydrate:60 },
+  { name:'三明治(1个约180g)', heat:380, protein:18, fat:14, carbohydrate:46 },
+  { name:'披萨(1片约150g)', heat:400, protein:18, fat:16, carbohydrate:48 },
+];
+
+let currentCategory = 'all';
+const FOOD_CATEGORIES = {
+  '早餐': ['包子','饺子','油条','燕麦','煎饼','粥','面包','鸡蛋','牛奶','酸奶','豆浆'],
+  '主食': ['米饭','馒头','面条','炒饭','土豆','全麦'],
+  '肉蛋': ['鸡肉','猪肉','牛肉','鱼','虾','蛋','排骨','肉片','三文','鸡腿'],
+  '蔬菜': ['番茄','黄瓜','西兰花','白菜','胡萝卜','豆腐','时蔬','蒜蓉','青菜'],
+  '水果': ['苹果','香蕉','橙子','西瓜','葡萄','草莓'],
+  '饮品': ['牛奶','酸奶','豆浆','可乐','奶茶','橙汁'],
+  '快餐': ['汉堡','方便面','三明治','披萨','薯片','炸鸡'],
+  '菜品': ['宫保','麻婆','鱼香','火锅','红烧','水煮','糖醋','番茄炒蛋','清炒']
+};
+
+function matchCategory(name) {
+  if (currentCategory === 'all') return true;
+  const keywords = FOOD_CATEGORIES[currentCategory] || [];
+  return keywords.some(kw => name.includes(kw));
+}
+
+function filterCategory(cat) {
+  currentCategory = cat;
+  // Update chip styling by checking onclick attribute
+  document.querySelectorAll('#foodCats span').forEach(s => {
+    const target = s.getAttribute('onclick') || '';
+    const isActive = target.includes("'" + cat + "'") || (cat === 'all' && target.includes("'all'"));
+    s.style.fontWeight = isActive ? '600' : '400';
+    s.style.background = isActive ? '#e8f8f6' : 'transparent';
+  });
+  if (cat !== 'all') {
+    document.getElementById('foodCatLabel').style.display = 'block';
+    document.getElementById('catName').textContent = cat;
+  } else {
+    document.getElementById('foodCatLabel').style.display = 'none';
+  }
+  searchFood();
+}
+
+function searchFood() {
+  const q = document.getElementById('foodSearch').value.trim().toLowerCase();
+  let results = q ? FOOD_DB.filter(f => f.name.toLowerCase().includes(q)) : FOOD_DB;
+  // Apply category filter
+  results = results.filter(f => matchCategory(f.name));
+  const container = document.getElementById('foodResults');
+  container.innerHTML = results.slice(0, 15).map((f, i) =>
+    `<div class="food-item" id="food-${i}" onclick="toggleServing('${f.name.replace(/'/g,"\\'")}',${f.heat},${f.protein},${f.fat},${f.carbohydrate},${i})">
+      <span>${f.name}</span><span class="heat" style="font-size:11px">🔥${f.heat}千卡 | P${f.protein}g</span>
+    </div>
+    <div id="serving-${i}" style="display:none;padding:8px 12px;background:#f8faf9;border-radius:0 0 8px 8px;font-size:12px">
+      份量：<button onclick="event.stopPropagation();addFoodLog('${f.name.replace(/'/g,"\\'")}',${f.heat},${f.protein},${f.fat},${f.carbohydrate},0.5,${i})" style="padding:4px 12px;margin:0 4px;border:1px solid #dde;border-radius:12px;background:#fff;cursor:pointer">0.5份</button>
+      <button onclick="event.stopPropagation();addFoodLog('${f.name.replace(/'/g,"\\'")}',${f.heat},${f.protein},${f.fat},${f.carbohydrate},1,${i})" style="padding:4px 12px;margin:0 4px;border:1px solid #4ECDC4;border-radius:12px;background:#e8f8f6;cursor:pointer;font-weight:600">1份</button>
+      <button onclick="event.stopPropagation();addFoodLog('${f.name.replace(/'/g,"\\'")}',${f.heat},${f.protein},${f.fat},${f.carbohydrate},2,${i})" style="padding:4px 12px;margin:0 4px;border:1px solid #dde;border-radius:12px;background:#fff;cursor:pointer">2份</button>
+    </div>`
+  ).join('');
+  if (results.length === 0) container.innerHTML = '<div style="padding:10px;color:var(--text-light);font-size:13px">未找到，请尝试其他关键词 → 试试切换分类或使用其他关键词</div>';
+  // Show recently used foods when no search/filter active
+  if (!q && currentCategory === 'all') {
+    const recent = getState('recentFoods', []);
+    if (recent.length > 0) {
+      const unique = [];
+      const seen = new Set();
+      recent.forEach(rn => {
+        const f = FOOD_DB.find(x => x.name === rn);
+        if (f && !seen.has(f.name)) { seen.add(f.name); unique.push(f); }
+      });
+      if (unique.length > 0) {
+        const recentHTML = '<div style="font-size:11px;color:var(--text-light);padding:8px 0 4px;margin-top:4px;border-top:1px dashed #e0e0e0">🕐 最近使用</div>' +
+          unique.slice(0, 5).map((f, i) =>
+            `<div class="food-item" id="rfood-${i}" onclick="toggleServing('${f.name.replace(/'/g,"\\'")}',${f.heat},${f.protein},${f.fat},${f.carbohydrate},'r${i}')" style="background:#fafffe">
+              <span>🕐 ${f.name}</span><span class="heat" style="font-size:11px">🔥${f.heat}千卡</span>
+            </div>
+            <div id="serving-r${i}" style="display:none;padding:8px 12px;background:#f8faf9;border-radius:0 0 8px 8px;font-size:12px">
+              份量：<button onclick="event.stopPropagation();addFoodLog('${f.name.replace(/'/g,"\\'")}',${f.heat},${f.protein},${f.fat},${f.carbohydrate},0.5,'r${i}')" style="padding:4px 12px;margin:0 4px;border:1px solid #dde;border-radius:12px;background:#fff;cursor:pointer">0.5份</button>
+              <button onclick="event.stopPropagation();addFoodLog('${f.name.replace(/'/g,"\\'")}',${f.heat},${f.protein},${f.fat},${f.carbohydrate},1,'r${i}')" style="padding:4px 12px;margin:0 4px;border:1px solid #4ECDC4;border-radius:12px;background:#e8f8f6;cursor:pointer;font-weight:600">1份</button>
+              <button onclick="event.stopPropagation();addFoodLog('${f.name.replace(/'/g,"\\'")}',${f.heat},${f.protein},${f.fat},${f.carbohydrate},2,'r${i}')" style="padding:4px 12px;margin:0 4px;border:1px solid #dde;border-radius:12px;background:#fff;cursor:pointer">2份</button>
+            </div>`
+          ).join('');
+        container.innerHTML = recentHTML + container.innerHTML;
+      }
+    }
+  }
+}
+
+function toggleServing(name, heat, protein, fat, carbohydrate, idx) {
+  // Hide all other serving selectors
+  document.querySelectorAll('[id^="serving-"]').forEach(el => el.style.display = 'none');
+  // Toggle this one
+  const el = document.getElementById('serving-' + idx);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function addFoodLog(name, heat, protein, fat, carbohydrate, amount, idx) {
+  const today = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+  const logs = getState('dietLogs', {});
+  if (!logs[today]) logs[today] = [];
+  logs[today].push({ foodName: name, heat: Math.round(heat * amount), protein: Math.round(protein * amount * 10) / 10,
+    fat: Math.round(fat * amount * 10) / 10, carbohydrate: Math.round(carbohydrate * amount * 10) / 10, amount, time: new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) });
+  setState('dietLogs', logs);
+  // Hide serving selector
+  const el = document.getElementById('serving-' + idx);
+  if (el) el.style.display = 'none';
+  const recent = getState('recentFoods', []);
+  const existIdx = recent.indexOf(name);
+  if (existIdx >= 0) recent.splice(existIdx, 1);
+  recent.unshift(name);
+  if (recent.length > 15) recent.pop();
+  setState('recentFoods', recent);
+  showToast('✅ 已添加: ' + name + ' x' + amount);
+  renderDietTab();
+  updateDashboard();
+}
+
+function deleteFoodLog(index) {
+  const today = getViewingDate();
+  const logs = getState('dietLogs', {});
+  if (logs[today]) { logs[today].splice(index, 1); if (logs[today].length === 0) delete logs[today]; }
+  setState('dietLogs', logs);
+  renderDietTab();
+  updateDashboard();
+}
+
+function renderDietTab() {
+  const today = getViewingDate();
+  document.getElementById('todayDate').textContent = getViewingDateLabel();
+  searchFood();
+  renderTrendChart();
+
+  const logs = getState('dietLogs', {});
+  const todayLogs = logs[today] || [];
+
+  // Render today's log
+  const logContainer = document.getElementById('todayLog');
+  if (todayLogs.length === 0) {
+    logContainer.innerHTML = '<div style="color:var(--text-light);font-size:13px;text-align:center;padding:10px">暂无记录，搜索食物并点击添加</div>';
+  } else {
+    logContainer.innerHTML = todayLogs.map((l, i) =>
+      `<div class="log-item">
+        <span>${l.time} ${l.foodName} ${l.amount > 1 ? 'x' + l.amount : ''}</span>
+        <span>🔥${l.heat}千卡 <span class="del" onclick="deleteFoodLog(${i})">✕</span></span>
+      </div>`
+    ).join('');
+  }
+
+  // Calculate totals
+  const totals = { heat: 0, protein: 0, fat: 0, carbohydrate: 0 };
+  todayLogs.forEach(l => { totals.heat += l.heat; totals.protein += l.protein; totals.fat += l.fat; totals.carbohydrate += l.carbohydrate; });
+  const goals = getState('nutritionGoals', calculateNutritionGoals());
+
+  // Render summary
+  const summary = document.getElementById('nutritionSummary');
+  summary.innerHTML =
+    renderProgressBar('热量', totals.heat, goals.heat) +
+    renderProgressBar('蛋白质', totals.protein, goals.protein) +
+    renderProgressBar('脂肪', totals.fat, goals.fat) +
+    renderProgressBar('碳水', totals.carbohydrate, goals.carbohydrate);
+}
+
+async function generateDailyReport() {
+  const today = getViewingDate();
+  const logs = getState('dietLogs', {});
+  const todayLogs = logs[today] || [];
+  if (todayLogs.length === 0) { showToast('今天还没有饮食记录'); return; }
+
+  const totals = { heat: 0, protein: 0, fat: 0, carbohydrate: 0 };
+  const foodList = [];
+  todayLogs.forEach(l => { totals.heat += l.heat; totals.protein += l.protein; totals.fat += l.fat; totals.carbohydrate += l.carbohydrate; foodList.push(l.foodName); });
+  const goals = getState('nutritionGoals', calculateNutritionGoals());
+
+  const reportDiv = document.getElementById('dailyReport');
+  reportDiv.style.display = 'block';
+  reportDiv.textContent = 'AI正在分析中...';
+
+  try {
+    const prompt = `请根据以下用户今日饮食数据生成一份简洁的营养总结和建议：\n\n今日食物：${foodList.join('、')}\n摄入：热量${Math.round(totals.heat)}千卡(目标${goals.heat})、蛋白质${Math.round(totals.protein)}g(目标${goals.protein})、脂肪${Math.round(totals.fat)}g(目标${goals.fat})、碳水${Math.round(totals.carbohydrate)}g(目标${goals.carbohydrate})\n\n请给出：(1)总体评价 (2)哪些营养达标/不达标 (3)晚餐建议 (4)明日提醒。控制在150字内。`;
+    const reply = await safeCallAI([{ role: 'user', content: prompt }], '无法生成报告，请检查网络\n\n💡 ' + getRandomTip());
+    reportDiv.textContent = reply;
+  } catch (err) {
+    reportDiv.textContent = '生成失败: ' + err.message + '\n\n💡 ' + getRandomTip();
+  }
+}
+
+
+// ==================== TREND CHART ====================
+function renderTrendChart() {
+  const logs = getState('dietLogs', {});
+  const goals = getState('nutritionGoals', calculateNutritionGoals());
+  const dates = [];
+  const values = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dateStr = d.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+    const dayLogs = logs[dateStr] || [];
+    let total = 0; dayLogs.forEach(l => total += l.heat);
+    dates.push(d.getDate() + '日');
+    values.push(total);
+  }
+  const maxVal = Math.max(goals.heat, ...values, 1);
+  const colors = ['var(--green)', '#3dbdb5', '#45b8ac', '#4ecdc4', '#5ed8cf', '#6ee3da', '#7eefe5'];
+  document.getElementById('trendChart').innerHTML = values.map((v, i) => {
+    const h = Math.max(4, Math.round(v / maxVal * 100));
+    const over = v > goals.heat ? 'var(--red)' : colors[i];
+    return '<div class="trend-bar"><div class="trend-bar-value">' + Math.round(v) + '</div><div class="trend-bar-fill" style="height:' + h + 'px;background:' + over + '"></div><div class="trend-bar-label">' + dates[i] + '</div></div>';
+  }).join('');
+}
+// ==================== DASHBOARD ====================
+function updateDashboard() {
+  const db = document.getElementById('dashboard');
+  const profile = getProfile();
+  if (!profile.height || !profile.weight) { db.style.display = 'none'; return; }
+  const today = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+  document.getElementById('dbDate').textContent = today;
+  db.style.display = 'block';
+  const logs = getState('dietLogs', {});
+  const todayLogs = logs[today] || [];
+  const totals = { heat: 0, protein: 0, fat: 0, carbohydrate: 0 };
+  todayLogs.forEach(l => { totals.heat += l.heat; totals.protein += l.protein; totals.fat += l.fat; totals.carbohydrate += l.carbohydrate; });
+  const goals = getState('nutritionGoals', calculateNutritionGoals());
+  document.getElementById('dbNutrition').innerHTML =
+    renderProgressBar('热量', totals.heat, goals.heat, { labelW: 40, fontSize: 10, valW: 55 }) +
+    renderProgressBar('蛋白', totals.protein, goals.protein, { labelW: 40, fontSize: 10, valW: 55 }) +
+    renderProgressBar('脂肪', totals.fat, goals.fat, { labelW: 40, fontSize: 10, valW: 55 }) +
+    renderProgressBar('碳水', totals.carbohydrate, goals.carbohydrate, { labelW: 40, fontSize: 10, valW: 55 });
+  document.getElementById('dbFoodList').innerHTML = todayLogs.length > 0
+    ? '📝 ' + todayLogs.map(l => l.foodName).join('、')
+    : '💡 还没有记录，去「饮食记录」页添加吧';
+}
+
+// ==================== WEEKLY REPORT ====================
+async function generateWeeklyReport() {
+  if (isSending) return;
+  isSending = true;
+  const logs = getState('dietLogs', {});
+  const goals = getState('nutritionGoals', calculateNutritionGoals());
+  const dates = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    dates.push(d.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-'));
+  }
+  const weekData = dates.map(date => {
+    const dayLogs = logs[date] || [];
+    const t = { heat: 0, protein: 0, fat: 0, carbohydrate: 0 };
+    const foods = [];
+    dayLogs.forEach(l => { t.heat += l.heat; t.protein += l.protein; t.fat += l.fat; t.carbohydrate += l.carbohydrate; foods.push(l.foodName); });
+    return { date, totals: t, foods };
+  });
+  const hasData = weekData.some(d => d.foods.length > 0);
+  if (!hasData) { isSending = false; showToast('最近7天没有饮食记录'); return; }
+  const ctx = document.getElementById('chatMessages');
+  const div = document.createElement('div'); div.className = 'msg assistant'; div.id = 'loadingMsg';
+  div.innerHTML = '📊 正在生成7天营养报告...<br><span class="loading"></span><span class="loading"></span><span class="loading"></span>';
+  ctx.appendChild(div); ctx.scrollTop = ctx.scrollHeight;
+  document.getElementById('emptyChat').style.display = 'none';
+  let dataSummary = '以下是用户最近7天的饮食数据：\n\n';
+  weekData.forEach(d => {
+    dataSummary += d.date + '：热量' + Math.round(d.totals.heat) + '/' + goals.heat + '千卡 蛋白质' + Math.round(d.totals.protein) + '/' + goals.protein + 'g 脂肪' + Math.round(d.totals.fat) + '/' + goals.fat + 'g 碳水' + Math.round(d.totals.carbohydrate) + '/' + goals.carbohydrate + 'g';
+    if (d.foods.length > 0) dataSummary += ' 食物：' + d.foods.join('、');
+    dataSummary += '\n';
+  });
+  dataSummary += '\n请生成：(1)本周饮食总体评价 (2)各营养素达标分析 (3)趋势变化 (4)下周建议。200字内，分点。';
+  try {
+    const reply = await safeCallAI([{ role: 'user', content: dataSummary }], '无法生成周报，请检查网络\n\n💡 ' + getRandomTip());
+    document.getElementById('loadingMsg')?.remove();
+    addChatMessage('user', '帮我生成本周营养报告');
+    addChatMessage('assistant', '📊 **7天营养周报**\n\n' + reply);
+  } catch (err) {
+    document.getElementById('loadingMsg')?.remove();
+    addChatMessage('assistant', '⚠️ 生成失败: ' + err.message);
+  } finally {
+    isSending = false;
+  }
+}
+// ==================== VOICE INPUT ====================
+let isRecording = false;
+function startVoiceInput() {
+  const micBtn = document.getElementById('micBtn');
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('你的浏览器不支持语音输入，请用Chrome打开');
+    return;
+  }
+
+  if (isRecording) return;
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'zh-CN';
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  isRecording = true;
+  micBtn.style.background = 'var(--red)';
+  micBtn.textContent = '🔴';
+  showToast('正在聆听...');
+
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript;
+    document.getElementById('chatInput').value = text;
+    micBtn.style.background = '#f0f0f0';
+    micBtn.textContent = '🎤';
+    isRecording = false;
+    showToast('已识别: ' + text);
+  };
+
+  recognition.onerror = () => {
+    micBtn.style.background = '#f0f0f0';
+    micBtn.textContent = '🎤';
+    isRecording = false;
+    showToast('语音识别失败，请重试');
+  };
+
+  recognition.onend = () => {
+    micBtn.style.background = '#f0f0f0';
+    micBtn.textContent = '🎤';
+    isRecording = false;
+  };
+
+  recognition.start();
+}
+
+// ==================== ACTIVE REMINDERS ====================
+function checkDietReminders() {
+  const today = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+  const logs = getState('dietLogs', {});
+  const todayLogs = logs[today] || [];
+  const totals = { heat: 0, protein: 0, fat: 0, carbohydrate: 0 };
+  todayLogs.forEach(l => { totals.heat += l.heat; totals.protein += l.protein; totals.fat += l.fat; totals.carbohydrate += l.carbohydrate; });
+  const goals = getState('nutritionGoals', calculateNutritionGoals());
+
+  // Check if notification permission granted
+  if (Notification.permission !== 'granted') return;
+
+  const hour = new Date().getHours();
+  if (hour === 12 && todayLogs.length === 0) {
+    new Notification('AI健康管家', { body: '中午好！别忘了记录你的午餐哦 🥗', icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🫀</text></svg>' });
+  }
+  if (hour === 18 && totals.heat < goals.heat * 0.5) {
+    new Notification('AI健康管家', { body: '今日热量摄入偏低，晚餐建议补充营养 🍽', icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🫀</text></svg>' });
+  }
+  if (hour === 21 && totals.heat > goals.heat * 1.2) {
+    new Notification('AI健康管家', { body: '今日热量已超标，建议明天控制饮食 ⚠️', icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🫀</text></svg>' });
+  }
+}
+
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+// Check reminders every 30 minutes
+setInterval(checkDietReminders, 30 * 60 * 1000);
+// Also check on page load
+setTimeout(checkDietReminders, 3000);
+requestNotificationPermission();
+
+// ==================== OFFLINE FALLBACK ====================
+const OFFLINE_TIPS = [
+  '💪 每天摄入蛋白质应占总热量的15-20%，优先选择鸡胸肉、鱼、豆制品',
+  '🥗 每餐应有1/2蔬菜、1/4蛋白质、1/4主食的"餐盘法则"',
+  '💧 建议每天饮水1500-2000ml，少量多次',
+  '🏃 每周至少150分钟中等强度运动，快走就是很好的选择',
+  '🍎 每天吃200-350g水果，一个苹果约200g',
+  '😴 保证7-8小时睡眠，睡眠不足会影响新陈代谢',
+  '🥣 早餐要吃好，提供全天30%的能量',
+  '🧂 每日盐摄入不超过6g，注意酱油、味精等隐形盐',
+  '🍳 烹饪方式优先：蒸>煮>炒>炸',
+  '🌯 晚餐宜清淡，建议在睡前3小时完成进食'
+];
+
+function getRandomTip() {
+  return OFFLINE_TIPS[Math.floor(Math.random() * OFFLINE_TIPS.length)];
+}
+
+// Network monitoring
+function updateOnlineStatus() {
+  const banner = document.getElementById('offlineBanner');
+  const tabBar = document.querySelector('.tab-bar');
+  if (navigator.onLine) {
+    banner.classList.remove('show');
+    tabBar.style.top = '72px';
+  } else {
+    banner.classList.add('show');
+    tabBar.style.top = '100px';
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+setTimeout(updateOnlineStatus, 500);
+
+// Enhanced API call with offline fallback
+async function safeCallAI(messages, fallbackMsg) {
+  if (!navigator.onLine) {
+    return fallbackMsg || ('⚠️ 当前处于离线状态，无法连接AI。\n\n💡 健康小贴士：' + getRandomTip());
+  }
+  try {
+    return await callBlueLM(messages);
+  } catch (err) {
+    console.error('AI call failed:', err);
+    const cfg = getApiConfig();
+    if (!cfg.baseUrl) {
+      return '⚠️ 未配置API，请确保已启动 server.py 并通过 http://localhost:8765 访问\n\n💡 健康小贴士：' + getRandomTip();
+    }
+    if (err.message.includes('401') || err.message.includes('Key')) {
+      return '⚠️ API Key 无效，请检查个人画像页的API配置\n\n💡 健康小贴士：' + getRandomTip();
+    }
+    return '⚠️ AI服务暂时不可用：' + err.message + '\n\n💡 本地健康小贴士：' + getRandomTip();
+  }
+}
+
+// ==================== DATA MANAGEMENT ====================
+function loadDemoData() {
+  if (!confirm('将加载过去7天的演示饮食数据，这会覆盖现有饮食记录。继续？')) return;
+  const logs = {};
+  const now = new Date();
+  const demos = [
+    ['米饭(100g)', 1], ['番茄炒蛋(份约200g)', 1], ['鸡胸肉(100g)', 1],
+    ['全麦面包(100g)', 2], ['鸡蛋(1个约50g)', 2], ['牛奶(250ml)', 1],
+    ['宫保鸡丁(份约300g)', 1], ['米饭(100g)', 1.5], ['可乐(330ml)', 1],
+    ['馒头(100g)', 1], ['清蒸鱼(份约200g)', 1], ['清炒时蔬(份约200g)', 1],
+    ['燕麦片(50g)', 1], ['香蕉(1根约120g)', 1], ['牛肉(100g)', 1],
+    ['蛋炒饭(份约300g)', 1], ['豆浆(300ml)', 1], ['苹果(1个约200g)', 1],
+    ['包子(1个约80g)', 2], ['橙子(1个约200g)', 1], ['汉堡(1个约200g)', 1],
+    ['三明治(1个约180g)', 1], ['酸奶(200ml)', 1], ['西瓜(1片约300g)', 1]
+  ];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const ds = d.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+    logs[ds] = [];
+    // Pick 2-4 items per day
+    const count = 2 + Math.floor(Math.random() * 3);
+    for (let j = 0; j < count; j++) {
+      const [name, amount] = demos[(i * 3 + j) % demos.length];
+      const food = FOOD_DB.find(f => f.name === name);
+      if (food) {
+        logs[ds].push({
+          foodName: name, amount,
+          heat: Math.round(food.heat * amount), protein: Math.round(food.protein * amount * 10) / 10,
+          fat: Math.round(food.fat * amount * 10) / 10, carbohydrate: Math.round(food.carbohydrate * amount * 10) / 10,
+          time: ['08:30', '12:15', '18:45'][j % 3]
+        });
+      }
+    }
+  }
+  setState('dietLogs', logs);
+  showToast('✅ 演示数据已加载（7天饮食记录）');
+  renderDietTab();
+  updateDashboard();
+}
+
+function exportData() {
+  const data = {
+    userProfile: getProfile(),
+    nutritionGoals: getState('nutritionGoals', calculateNutritionGoals()),
+    dietLogs: getState('dietLogs', {}),
+    chatHistory: getChatHistory(),
+    exportTime: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'AI健康管家-数据备份-' + new Date().toLocaleDateString('zh-CN').replace(/\//g, '-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ 数据已导出');
+}
+
+function clearAllData() {
+  if (!confirm('确定要清除所有数据吗？包括画像、饮食记录、聊天历史。此操作不可恢复！')) return;
+  if (!confirm('再次确认：清除所有本地数据？')) return;
+  localStorage.clear();
+  showToast('✅ 数据已清除，页面即将刷新');
+  setTimeout(() => location.reload(), 1000);
+}
+
+// ==================== MOBILE KEYBOARD ====================
+document.addEventListener('focusin', (e) => {
+  if (e.target.tagName === 'INPUT') {
+    setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+  }
+});
+
+// ==================== INIT ====================
+function init() {
+  loadProfileForm();
+  renderChatMessages();
+  updateDashboard();
+  const p = getProfile();
+  if (!p.height || !p.weight) {
+    setTimeout(() => showToast('👋 首次使用？请先填写「个人画像」获取个性化建议', 4000), 500);
+  }
+}
+init();
+</script>
+<div style="text-align:center;padding:12px;color:var(--text-light);font-size:10px;opacity:0.6">
+  Powered by vivo 蓝心大模型 · AI健康管家 · 专业管家团队
+</div>
+</body>
+</html>

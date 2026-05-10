@@ -1,0 +1,6 @@
+{
+  "name": "ai-health-manager",
+  "version": "1.0.0",
+  "description": "AI健康管家 - 基于vivo蓝心大模型的智能健康管理工具",
+  "type": "module"
+}
