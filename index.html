@@ -41,7 +41,7 @@ body{font-family:var(--font-stack);background:var(--bg);color:var(--text);min-he
 .form-group{margin-bottom:12px}
 .form-group label{display:block;font-size:13px;color:var(--text-light);margin-bottom:4px}
 .form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid #dde1e4;border-radius:10px;font-size:15px;background:#fafbfc;outline:none;transition:border 0.2s;-webkit-appearance:none;appearance:none;box-sizing:border-box}
-.form-group input:focus,.form-group select:focus{border-color:var(--green)}
+.form-group input:focus,.form-group select:focus{border-color:var(--green)}.form-group select{color:var(--text)}
 .form-row{display:flex;gap:10px}
 .form-row .form-group{flex:1}
 .btn{display:block;width:100%;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s}
@@ -364,7 +364,7 @@ async function testApiConnection() {
       resultDiv.style.color = '#FF6B6B';
     }
   } catch (e) {
-    resultDiv.textContent = '❌ 连接失败: ' + e.message + '（请确认Base URL正确且server.py已启动）';
+    resultDiv.textContent = '❌ 连接失败: ' + e.message + '（请检查网络连接或切换至本地 server.py）';
     resultDiv.style.color = '#FF6B6B';
   }
 }
